@@ -1,4 +1,3 @@
-
 def find(file, partten, arr=[])
   if arr.empty?
     file.scan(partten)
@@ -7,28 +6,43 @@ def find(file, partten, arr=[])
       file.match eval(partten)
     end
   end
-
 end
 
+def access_file(path, text='')
+  response = false
+  begin
+    unless text.length > 0
+      file = File.open(path)
+      response = file.read
+    else
+      response = File.write(path, text)
+    end
+  rescue
+    puts "Falha ao acessar path: #{path}"
+    exit
+  ensure
+    file.close if file
+    puts
+  end
+
+  return response
+end
 
 def main
   path = ARGV[0]
+
   gemfile = path
   gemlock = "#{path}.lock"
 
-  gem_stream = File.open(gemfile)
-  gemfile = gem_stream.read
-
-  # gemfile = gemfile.gsub('"', "'")
+  gemfile = access_file(gemfile)
 
   gems = find(gemfile, /(?<=gem ['"])\S+(?=["']\s*$)/)
-
-  lock_stream = File.open(gemlock)
-  lockfile = lock_stream.read
+  
+  lockfile = access_file(gemlock)
 
   locks = find(lockfile, '/(?<gem>\b#{gem}\b) \(=* *(?<version>\d.*)\)/', gems)
 
-  puts locks
+  puts "Gems a serem travadas:\n#{locks}"
 
   locks.map do | lgem |
     unless lgem.nil?
@@ -36,7 +50,11 @@ def main
     end
   end
 
-  File.write(path, gemfile)
+  puts gemfile
+
+  access_file(path, gemfile)
+
+  puts 'Gemfile atualizado com sucesso!'
 end
 
 main
